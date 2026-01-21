@@ -32,5 +32,29 @@ class GeneralCog(commands.Cog):
             f"Se han borrado {len(deleted) - 1} mensajes.", ephemeral=True
         )
 
+    @app_commands.command(name="sync", description="Sync commands to this server (Admin only)")
+    async def sync(self, interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "Solo administradores pueden usar este comando.", ephemeral=True
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            # Sync to current guild
+            synced = await self.bot.tree.sync(guild=interaction.guild)
+            await interaction.followup.send(
+                f"✓ Sincronizados {len(synced)} comandos a este servidor.\n"
+                f"Los comandos deberían aparecer ahora.",
+                ephemeral=True
+            )
+        except Exception as e:
+            await interaction.followup.send(
+                f"✗ Error al sincronizar: {e}",
+                ephemeral=True
+            )
+
 async def setup(bot):
     await bot.add_cog(GeneralCog(bot))

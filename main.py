@@ -8,14 +8,20 @@ from config import config
 class MyClient(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
+        intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
         await self.load_cogs()
 
-        guild = discord.Object(id=config.GUILD_ID)
-        await self.tree.sync(guild=guild)
-        print(f"Synced commands to guild {config.GUILD_ID}")
+        # Sync globally for all servers
+        try:
+            synced = await self.tree.sync()
+            print(f"✓ Synced {len(synced)} commands globally")
+            print(f"⚠️  Global commands may take up to 1 hour to appear in all servers")
+            print(f"   Use /sync command in each server for instant sync")
+        except Exception as e:
+            print(f"✗ Failed to sync globally: {e}")
 
     async def load_cogs(self):
         cogs_dir = os.path.join(os.path.dirname(__file__), 'cogs')
@@ -24,9 +30,9 @@ class MyClient(commands.Bot):
                 cog_name = filename[:-3]
                 try:
                     await self.load_extension(f'cogs.{cog_name}')
-                    print(f'Loaded cog: {cog_name}')
+                    print(f'✓ Loaded cog: {cog_name}')
                 except Exception as e:
-                    print(f'Failed to load cog {cog_name}: {e}')
+                    print(f'✗ Failed to load cog {cog_name}: {e}')
 
 client = MyClient()
 client.run(config.TOKEN)
