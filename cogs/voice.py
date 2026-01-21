@@ -35,5 +35,32 @@ class VoiceCog(commands.Cog):
         finally:
             AudioUtils.cleanup_audio_file(audio_file)
 
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        """Event listener for voice state updates (joins, leaves, moves)."""
+        # Check if user joined a voice channel
+        if after.channel is not None and (before.channel is None or before.channel != after.channel):
+            # Don't greet the bot itself
+            if member.bot:
+                return
+
+            # Check if bot is already in a voice channel in this guild
+            vc = member.guild.voice_client
+
+            # Connect to the voice channel if not already there
+            if vc is None:
+                vc = await after.channel.connect()
+            elif vc.channel != after.channel:
+                await vc.move_to(after.channel)
+
+            # Generate and play the greeting message
+            greeting_text = "I'm Alex Valle 2, pleasure to know you"
+            audio_file = await AudioUtils.generate_tts_audio(greeting_text, lang="en")
+
+            try:
+                await AudioUtils.play_audio_in_voice_channel(vc, audio_file)
+            finally:
+                AudioUtils.cleanup_audio_file(audio_file)
+
 async def setup(bot):
     await bot.add_cog(VoiceCog(bot))
